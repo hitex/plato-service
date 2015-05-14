@@ -1,0 +1,28 @@
+{
+  "name": "plato-service",
+  "version": "0.0.1",
+  "description": "Service for PlatoJS",
+  "main": "src/index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hitex/plato-service.git"
+  },
+  "author": "Vladas Mikalajunas <hitexgm@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.12.3",
+    "jszip": "^2.5.0",
+    "mkdirp": "^0.5.1",
+    "plato": "^1.4.0",
+    "rc": "^1.0.1",
+    "request": "^2.55.0"
+  },
+  "keywords": [
+    "platojs",
+    "service",
+    "complexity"
+  ]
+}
