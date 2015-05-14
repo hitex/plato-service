@@ -3,6 +3,7 @@
 var defaults = {
     tmp: 'tmp',
     resultDir: 'results',
+    port: 3000,
     providers: {
         'github.com': {
             zipUrl: 'https://github.com/{user}/{repo}/archive/{branch}.zip'
@@ -36,61 +37,30 @@ app.get('/:provider/:user/:repo/:branch?', function (req, res) {
 });
 
 function run(params) {
+    var name = params.user + '/' + params.repo + '#' + params.branch;
+    console.log('Starting processing %s', name);
     var url = replace(conf.providers[params.provider].zipUrl, params);
 
-    downloadZip(url, function(buffer){
-        extractZip(buffer, function(zipPath){
-            var source = params.dir ? path.join(zipPath, params.dir) : zipPath;
-            setTimeout(function(){
-                runPlato([params.user, params.repo, params.branch].join('_').replace('/', '_'), source);
-            },1000); // TODO: Hack to allow successful unzipping
-        });
-    });
-}
-
-function runPlato(name, source) {
-    var files = [
-        source + '/*'
-    ];
-
-    console.log(files);
-
-    var outputDir = './' + conf.resultDir + '/' + name;
-    // null options for this example
-    var options = {
-        title: 'Your title here',
-        recurse: true
-    };
-
-    var callback = function (report){
-        console.log('done!');
-    };
-
-    plato.inspect(files, outputDir, options, callback);
-}
-
-function extractZip(buffer, cb) {
-    var zip = new JSZip(buffer);
-
-    var tmp = path.join(conf.tmp, Date.now().toString());
-    mkdirp(tmp, handleProjectDirCreation);
-
-    function handleProjectDirCreation(err) {
-        if (err) throw new Error(err);
-
-        Object.keys(zip.files).forEach(function(filename) {
-            var entry = zip.files[filename];
-            if (entry.options.dir) return;
-            var content = entry.asNodeBuffer();
-            var dest = path.join(tmp, filename.split('/').slice(1).join('/'));
-            mkdirp(path.dirname(dest), function(err) {
-                if (err) throw new Error(err);
-                fs.writeFileSync(dest, content);
-            });
-        });
-
-        cb(tmp);
+    function handleDownloadZip(buffer) {
+        extractZip(buffer, handleExtractZip);
     }
+
+    function handleExtractZip(zipPath) {
+        var source = params.dir ? path.join(zipPath, params.dir) : zipPath;
+        setTimeout(function(){
+            runPlato(
+                [params.user, params.repo, params.branch.replace('/', '_')].join('/'),
+                source,
+                handlePlato
+            );
+        }, 1000); // TODO: Hack to allow successful unzipping
+    }
+
+    function handlePlato() {
+        console.log('Done processing %s', name);
+    }
+
+    downloadZip(url, handleDownloadZip);
 }
 
 function downloadZip(url, cb) {
@@ -116,11 +86,48 @@ function downloadZip(url, cb) {
     });
 }
 
-var server = app.listen(3000, function () {
-    var host = server.address().address;
-    var port = server.address().port;
-    console.log('Example app listening at http://%s:%s', host, port);
-});
+function extractZip(buffer, cb) {
+    var zip = new JSZip(buffer);
+
+    var tmp = path.join(conf.tmp, Date.now().toString());
+    mkdirp(tmp, handleProjectDirCreation);
+
+    console.log('Extracting zip to %s', tmp);
+
+    function handleProjectDirCreation(err) {
+        if (err) throw new Error(err);
+
+        Object.keys(zip.files).forEach(function(filename) {
+            var entry = zip.files[filename];
+            if (entry.options.dir) return;
+            var content = entry.asNodeBuffer();
+            var dest = path.join(tmp, filename.split('/').slice(1).join('/'));
+            mkdirp(path.dirname(dest), function(err) {
+                if (err) throw new Error(err);
+                fs.writeFileSync(dest, content);
+            });
+        });
+
+        cb(tmp);
+    }
+}
+
+function runPlato(name, source, cb) {
+    console.log('Running PlatoJS for %s at %s', name, source);
+
+    var files = [
+        source + '/*'
+    ];
+
+    var outputDir = './' + conf.resultDir + '/' + name;
+
+    var options = {
+        title: name,
+        recurse: true
+    };
+
+    plato.inspect(files, outputDir, options, cb);
+}
 
 function replace(string, params) {
     Object.keys(params).forEach(function(param){
@@ -128,3 +135,9 @@ function replace(string, params) {
     });
     return string;
 }
+
+var server = app.listen(conf.port, function () {
+    var host = server.address().address;
+    var port = server.address().port;
+    console.log('Plato Service started at http://%s:%s', host, port);
+});
