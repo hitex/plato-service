@@ -38,6 +38,7 @@ function run(params) {
 
     function handlePlato() {
         console.log('Done processing %s', name);
+        process.send({__type:'done'});
     }
 
     downloadZip(url, handleDownloadZip);

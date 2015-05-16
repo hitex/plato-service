@@ -22,6 +22,8 @@ var childProcess = require('child_process');
 var worker = childProcess.fork('src/worker.js');
 worker.send({__type:'conf', conf: conf});
 
+var pending = 0;
+
 app.use('/results', express.static('results'));
 
 app.get('/:provider/:user/:repo/:branch?', function (req, res) {
@@ -36,7 +38,20 @@ app.get('/:provider/:user/:repo/:branch?', function (req, res) {
     console.log('Request received for', params);
     worker.send(params);
 
-    res.send('Submitted! ' + new Date());
+    pending++;
+
+    res.send({
+        date: Date.now(),
+        queue: pending,
+        result: '/results/' + params.provider + '/' + params.user + '/' + params.repo + '/' + params.branch
+    });
+});
+
+worker.on('message', function(msg){
+    if (msg.__type === 'done') {
+        pending--;
+        console.log('Pending tasks in queue', pending);
+    }
 });
 
 var server = app.listen(conf.port, function () {
