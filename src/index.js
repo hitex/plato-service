@@ -23,6 +23,7 @@ var path = require('path');
 var mkdirp = require('mkdirp');
 var request = require('request');
 var conf = require('rc')('platoservice', defaults);
+var async = require('async');
 
 app.get('/:provider/:user/:repo/:branch?', function (req, res) {
     var params = {
@@ -47,13 +48,11 @@ function run(params) {
 
     function handleExtractZip(zipPath) {
         var source = params.dir ? path.join(zipPath, params.dir) : zipPath;
-        setTimeout(function(){
-            runPlato(
-                [params.user, params.repo, params.branch.replace('/', '_')].join('/'),
-                source,
-                handlePlato
-            );
-        }, 1000); // TODO: Hack to allow successful unzipping
+        runPlato(
+            [params.user, params.repo, params.branch.replace('/', '_')].join('/'),
+            source,
+            handlePlato
+        );
     }
 
     function handlePlato() {
@@ -95,20 +94,22 @@ function extractZip(buffer, cb) {
     console.log('Extracting zip to %s', tmp);
 
     function handleProjectDirCreation(err) {
-        if (err) throw new Error(err);
+        if (err) cb(err);
 
-        Object.keys(zip.files).forEach(function(filename) {
-            var entry = zip.files[filename];
-            if (entry.options.dir) return;
-            var content = entry.asNodeBuffer();
-            var dest = path.join(tmp, filename.split('/').slice(1).join('/'));
-            mkdirp(path.dirname(dest), function(err) {
-                if (err) throw new Error(err);
-                fs.writeFileSync(dest, content);
-            });
+        async.each(Object.keys(zip.files), extractFile, function(err) {
+            cb(tmp);
         });
+    }
 
-        cb(tmp);
+    function extractFile(filename, cb) {
+        var entry = zip.files[filename];
+        if (entry.options.dir) return cb();
+        var content = entry.asNodeBuffer();
+        var dest = path.join(tmp, filename.split('/').slice(1).join('/'));
+        mkdirp(path.dirname(dest), function(err) {
+            if (err) cb(err);
+            fs.writeFile(dest, content, cb);
+        });
     }
 }
 
