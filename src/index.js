@@ -22,6 +22,8 @@ var childProcess = require('child_process');
 var worker = childProcess.fork('src/worker.js');
 worker.send({__type:'conf', conf: conf});
 
+app.use('/results', express.static('results'));
+
 app.get('/:provider/:user/:repo/:branch?', function (req, res) {
     var params = {
         provider: req.params.provider,
