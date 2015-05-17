@@ -8,6 +8,7 @@ var mkdirp = require('mkdirp');
 var request = require('request');
 var conf;
 var async = require('async');
+var rimraf = require('rimraf');
 
 process.on('message', function (msg) {
     if (msg.__type === 'conf') {
@@ -23,14 +24,17 @@ function run(params) {
     console.log('Starting processing %s', name);
     var url = replace(conf.providers[params.provider].zipUrl, params);
 
+    var tmpDir;
+
     function handleDownloadZip(buffer) {
         extractZip(buffer, handleExtractZip);
     }
 
     function handleExtractZip(zipPath) {
         var source = params.dir ? path.join(zipPath, params.dir) : zipPath;
+        tmpDir = zipPath;
         runPlato(
-            [params.user, params.repo, params.branch.replace('/', '_')].join('/'),
+            [params.provider, params.user, params.repo, params.branch.replace('/', '_')].join('/'),
             source,
             handlePlato
         );
@@ -39,6 +43,12 @@ function run(params) {
     function handlePlato() {
         console.log('Done processing %s', name);
         process.send({__type:'done'});
+
+        console.log('Cleaning up', tmpDir);
+        rimraf(tmpDir, function(err){
+            if (err) return console.log('Failed cleaning up', tmp);
+            console.log('Done cleaning up', tmpDir);
+        });
     }
 
     downloadZip(url, handleDownloadZip);

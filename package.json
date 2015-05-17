@@ -19,7 +19,8 @@
     "mkdirp": "^0.5.1",
     "plato": "^1.4.0",
     "rc": "^1.0.1",
-    "request": "^2.55.0"
+    "request": "^2.55.0",
+    "rimraf": "^2.3.3"
   },
   "keywords": [
     "platojs",
