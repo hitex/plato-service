@@ -24,6 +24,9 @@ worker.send({__type:'conf', conf: conf});
 
 var pending = 0;
 
+
+app.use('/', express.static('www'));
+
 app.use('/results', express.static('results'));
 
 app.get('/:provider/:user/:repo/:branch?', function (req, res) {
