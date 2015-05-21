@@ -20,10 +20,28 @@ var conf = require('rc')('platoservice', defaults);
 var childProcess = require('child_process');
 
 var worker = childProcess.fork('src/worker.js');
-worker.send({__type:'conf', conf: conf});
+
+function startWorker () {
+    console.log('Restarting child process');
+    worker = childProcess.fork('src/worker.js');
+    worker.send({__type:'conf', conf: conf});
+    worker.on('message', function (msg) {
+        if (msg.__type === 'error') {
+            pending--;
+            console.log('Child died horribly...');
+            console.log(msg.stack);
+            startWorker();
+
+        } else if (msg.__type === 'done') {
+            pending--;
+            console.log('Pending tasks in queue', pending);
+        }
+    });
+}
+
+startWorker();
 
 var pending = 0;
-
 
 app.use('/', express.static('www'));
 
@@ -48,13 +66,6 @@ app.get('/:provider/:user/:repo/:branch?', function (req, res) {
         queue: pending,
         result: '/results/' + params.provider + '/' + params.user + '/' + params.repo + '/' + params.branch
     });
-});
-
-worker.on('message', function(msg){
-    if (msg.__type === 'done') {
-        pending--;
-        console.log('Pending tasks in queue', pending);
-    }
 });
 
 var server = app.listen(conf.port, function () {

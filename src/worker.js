@@ -128,3 +128,12 @@ function replace(string, params) {
     });
     return string;
 }
+
+process.on('uncaughtException', function(e){
+    process.send({
+        __type: 'error',
+        error: e.toString(),
+        stack: e.stack.toString()
+    });
+    process.exit(1);
+})
