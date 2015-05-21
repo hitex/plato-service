@@ -20,6 +20,19 @@ var conf = require('rc')('platoservice', defaults);
 var childProcess = require('child_process');
 
 var worker = childProcess.fork('src/worker.js');
+var inProgress = false;
+var queue = [];
+
+function runPendingTask(){
+    if (queue.length) {
+        startTask(queue.shift());
+    }
+}
+
+function startTask(task){
+    inProgress = true;
+    worker.send(task);
+}
 
 function startWorker () {
     console.log('Restarting child process');
@@ -27,21 +40,21 @@ function startWorker () {
     worker.send({__type:'conf', conf: conf});
     worker.on('message', function (msg) {
         if (msg.__type === 'error') {
-            pending--;
+            inProgress = false;
             console.log('Child died horribly...');
             console.log(msg.stack);
             startWorker();
+            runPendingTask();
 
         } else if (msg.__type === 'done') {
-            pending--;
-            console.log('Pending tasks in queue', pending);
+            inProgress = false;
+            console.log('Pending tasks in queue', queue.length);
+            runPendingTask();
         }
     });
 }
 
 startWorker();
-
-var pending = 0;
 
 app.use('/', express.static('www'));
 
@@ -57,13 +70,18 @@ app.get('/:provider/:user/:repo/:branch?', function (req, res) {
     };
 
     console.log('Request received for', params);
-    worker.send(params);
 
-    pending++;
+    if (!inProgress) {
+        console.log('and passed to worker');
+        startTask(params);
+    } else {
+        console.log('and added to the queue');
+        queue.push(params);
+    }
 
     res.send({
         date: Date.now(),
-        queue: pending,
+        queue: queue.length,
         result: '/results/' + params.provider + '/' + params.user + '/' + params.repo + '/' + params.branch
     });
 });
