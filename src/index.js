@@ -18,7 +18,9 @@ var express = require('express');
 var app = express();
 var conf = require('rc')('platoservice', defaults);
 var childProcess = require('child_process');
+var low = require('lowdb');
 
+var db = low('db.json');
 var worker = childProcess.fork('src/worker.js');
 var inProgress = false;
 var queue = [];
@@ -30,7 +32,7 @@ function runPendingTask(){
 }
 
 function startTask(task){
-    inProgress = true;
+    inProgress = task;
     worker.send(task);
 }
 
@@ -40,6 +42,13 @@ function startWorker () {
     worker.send({__type:'conf', conf: conf});
     worker.on('message', function (msg) {
         if (msg.__type === 'error') {
+            db('tasks').push({
+                time: Date.now(),
+                task: inProgress,
+                status: 'error',
+                message: msg.error,
+                details: msg.stack
+            });
             inProgress = false;
             console.log('Child died horribly...');
             console.log(msg.stack);
@@ -47,6 +56,11 @@ function startWorker () {
             runPendingTask();
 
         } else if (msg.__type === 'done') {
+            db('tasks').push({
+                time: Date.now(),
+                task: inProgress,
+                status: 'success'
+            });
             inProgress = false;
             console.log('Pending tasks in queue', queue.length);
             runPendingTask();
