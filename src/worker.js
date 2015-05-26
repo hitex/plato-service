@@ -10,6 +10,8 @@ var conf;
 var async = require('async');
 var rimraf = require('rimraf');
 
+var task;
+
 process.on('message', function (msg) {
     if (msg.__type === 'conf') {
         console.log('conf passed to child');
@@ -19,7 +21,9 @@ process.on('message', function (msg) {
     }
 });
 
-function run(params) {
+function run(newTask) {
+    task = newTask;
+    var params = task.params;
     var name = params.user + '/' + params.repo + '#' + params.branch;
     console.log('Starting processing %s', name);
     var url = replace(conf.providers[params.provider].zipUrl, params);
@@ -42,7 +46,10 @@ function run(params) {
 
     function handlePlato() {
         console.log('Done processing %s', name);
-        process.send({__type:'done'});
+        process.send({
+            __type: 'done',
+            task: task
+        });
 
         console.log('Cleaning up', tmpDir);
         rimraf(tmpDir, function(err){
@@ -133,7 +140,8 @@ process.on('uncaughtException', function(e){
     process.send({
         __type: 'error',
         error: e.toString(),
-        stack: e.stack.toString()
+        stack: e.stack.toString(),
+        task: task
     });
     process.exit(1);
 })
