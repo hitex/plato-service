@@ -21,7 +21,7 @@ var conf = require('rc')('platoservice', defaults);
 var childProcess = require('child_process');
 
 var DataStore = require('nedb');
-var db = new DataStore({ filename: 'database', autoload: true });
+var db = new DataStore({ filename: 'tasks.db', autoload: true });
 
 var worker = childProcess.fork('src/worker.js');
 var inProgress = false;
@@ -95,8 +95,8 @@ app.get('/', function (req, res) {
     });
 });
 
-app.use('/bower_components', express.static('www/bower_components'));
-app.use('/dist', express.static('www/dist'));
+app.use('/bower_components', express.static('bower_components'));
+app.use('/dist', express.static('bower_components/startbootstrap-sb-admin-2/dist'));
 
 app.use('/results', express.static('results'));
 
