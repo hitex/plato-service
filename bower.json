@@ -1,0 +1,23 @@
+{
+  "name": "plato-service",
+  "version": "0.0.0",
+  "homepage": "https://github.com/hitex/plato-service",
+  "authors": [
+    "Vladas Mikalajunas <hitexgm@gmail.com>"
+  ],
+  "keywords": [
+    "plato",
+    "service"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "startbootstrap-sb-admin-2": "~1.0.7"
+  }
+}
