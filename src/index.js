@@ -21,22 +21,66 @@ var conf = require('rc')('platoservice', defaults);
 var childProcess = require('child_process');
 
 var DataStore = require('nedb');
-var db = new DataStore({ filename: 'tasks.db', autoload: true });
+var db = {
+    tasks: new DataStore({ filename: 'tasks.db', autoload: true }),
+    projects: new DataStore({ filename: 'projects.db', autoload: true })
+};
 
 var worker = childProcess.fork('src/worker.js');
 var inProgress = false;
 var queue = [];
 
+var Projects = (function(){
+    var projects = [];
+
+    db.projects.find({}).exec(function(err, data){
+        if (err || !data.length) return;
+        data = data.map(function(item){
+            return item._id;
+        });
+        projects = projects.concat(data);
+        projects = projects.filter(function (item, pos) {return projects.indexOf(item) == pos});   // deduplicate
+    });
+
+    var add = function (project) {
+        db.projects.insert({_id:project},function(err){
+            if (!err) projects.push(project);
+        });
+    };
+
+    var getCount = function () {
+        return projects.length;
+    };
+
+    return {
+        add: add,
+        getCount: getCount
+    };
+})();
+
+var TaskCounter = (function(){
+    var taskCount = 0;
+
+    db.tasks.find({}).exec(function(err, data){
+        taskCount += data.length;
+    });
+
+    return {
+        inc: function(){taskCount++},
+        getCount: function(){return taskCount}
+    };
+})();
+
 function runPendingTask(){
     if (queue.length) {
         var task = queue.shift();
-        db.update({ _id: task._id }, { $set: { status: 'processing' } });
         startTask(task);
     }
 }
 
 function startTask(task){
     inProgress = true;
+    db.tasks.update({ _id: task._id }, { $set: { status: 'processing' } });
     worker.send(task);
 }
 
@@ -45,9 +89,9 @@ function startWorker () {
     worker = childProcess.fork('src/worker.js');
     worker.send({__type:'conf', conf: conf});
     worker.on('message', function (msg) {
-        console.log(msg)
+        console.log(msg);
         if (msg.__type === 'error') {
-            db.update({ _id: msg.task._id }, { $set: { status: 'error', stack: msg.stack } });
+            db.tasks.update({ _id: msg.task._id }, { $set: { status: 'error', stack: msg.stack } });
             inProgress = false;
             console.log('Child died horribly...');
             console.log(msg.stack);
@@ -55,8 +99,10 @@ function startWorker () {
             runPendingTask();
 
         } else if (msg.__type === 'done') {
-            db.update({ _id: msg.task._id }, { $set: { status: 'done' } });
+            db.tasks.update({ _id: msg.task._id }, { $set: { status: 'done' } });
             inProgress = false;
+
+            Projects.add([msg.task.params.provider, msg.task.params.user, msg.task.params.repo].join('/'));
             console.log('Pending tasks in queue', queue.length);
             runPendingTask();
         }
@@ -69,14 +115,14 @@ app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
 
 app.get('/', function (req, res) {
-    db.find({}).sort({ time: -1 }).limit(100).exec(function (err, data) {
+    db.tasks.find({}).sort({ time: -1 }).limit(100).exec(function (err, data) {
         var model = {
             queue: data.filter(function(entry){
                 return entry.status === 'pending';
             }).length,
-            projectCount: '-',
+            projectCount: Projects.getCount(),
             avgMaintainability: '-',
-            taskCount: '-',
+            taskCount: TaskCounter.getCount(),
             log: data.map(function(entry){
                 return {
                     project: entry.params.user + '/' + entry.params.repo,
@@ -126,7 +172,8 @@ app.get('/:provider/:user/:repo/:branch?', function (req, res) {
         queue.push(task);
     }
 
-    db.insert(task);
+    db.tasks.insert(task);
+    TaskCounter.inc();
 
     res.send({
         date: Date.now(),
