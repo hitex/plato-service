@@ -35,11 +35,11 @@ function run(newTask) {
     }
 
     function handleExtractZip(zipPath) {
-        var source = params.dir ? path.join(zipPath, params.dir) : zipPath;
         tmpDir = zipPath;
         runPlato(
             [params.provider, params.user, params.repo, params.branch.replace('/', '_')].join('/'),
-            source,
+            zipPath,
+            params.dir,
             handlePlato
         );
     }
@@ -112,21 +112,27 @@ function extractZip(buffer, cb) {
     }
 }
 
-function runPlato(name, source, cb) {
+function runPlato(name, source, dir, cb) {
     console.log('Running PlatoJS for %s at %s', name, source);
 
-    var files = [
-        source + '/*'
-    ];
+    var cwd = process.cwd();
+    process.chdir(source);
 
-    var outputDir = './' + conf.resultDir + '/' + name;
+    var outputDir = path.relative(process.cwd(), cwd) + '/' + conf.resultDir + '/' + name;
+
+    var files = [
+        dir ? dir + '/*' : '/*'
+    ];
 
     var options = {
         title: name,
         recurse: true
     };
 
-    plato.inspect(files, outputDir, options, cb);
+    plato.inspect(files, outputDir, options, function(){
+        process.chdir(cwd);
+        cb();
+    });
 }
 
 function replace(string, params) {
