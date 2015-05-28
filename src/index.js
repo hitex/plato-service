@@ -115,6 +115,10 @@ app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
 
 app.get('/', function (req, res) {
+    res.redirect('/dashboard');
+});
+
+app.get('/dashboard', function (req, res) {
     db.tasks.find({}).sort({ time: -1 }).limit(100).exec(function (err, data) {
         var model = {
             queue: data.filter(function(entry){
