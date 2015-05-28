@@ -141,12 +141,19 @@ app.get('/', function (req, res) {
     });
 });
 
+app.get('/add-project', function (req, res) {
+    var model = {
+        providers: Object.keys(conf.providers)
+    };
+    res.render('add-project', model);
+});
+
 app.use('/bower_components', express.static('bower_components'));
 app.use('/dist', express.static('bower_components/startbootstrap-sb-admin-2/dist'));
 
 app.use('/results', express.static('results'));
 
-app.get('/:provider/:user/:repo/:branch?', function (req, res) {
+app.get('/task/:provider/:user/:repo', function (req, res) {
     var task = {
         _id: Date.now() * 10000 + Math.round(Math.random()*10000),
         time: Date.now(),
