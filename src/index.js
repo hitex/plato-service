@@ -42,7 +42,8 @@ var Projects = (function(){
         projects = projects.filter(function (item, pos) {return projects.indexOf(item) == pos});   // deduplicate
     });
 
-    var add = function (project) {
+    var add = function (params) {
+        var project = [params.provider, params.user, params.repo].join('/');
         db.projects.insert({_id:project},function(err){
             if (!err) projects.push(project);
         });
@@ -102,7 +103,7 @@ function startWorker () {
             db.tasks.update({ _id: msg.task._id }, { $set: { status: 'done' } });
             inProgress = false;
 
-            Projects.add([msg.task.params.provider, msg.task.params.user, msg.task.params.repo].join('/'));
+            Projects.add(msg.task.params);
             console.log('Pending tasks in queue', queue.length);
             runPendingTask();
         }
