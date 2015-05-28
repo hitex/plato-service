@@ -48,13 +48,13 @@ var Projects = (function(){
         });
     };
 
-    var getCount = function () {
-        return projects.length;
+    var getProjects = function () {
+        return projects;
     };
 
     return {
         add: add,
-        getCount: getCount
+        getProjects: getProjects
     };
 })();
 
@@ -124,7 +124,7 @@ app.get('/dashboard', function (req, res) {
             queue: data.filter(function(entry){
                 return entry.status === 'pending';
             }).length,
-            projectCount: Projects.getCount(),
+            projectCount: Projects.getProjects().length,
             avgMaintainability: '-',
             taskCount: TaskCounter.getCount(),
             log: data.map(function(entry){
@@ -137,6 +137,7 @@ app.get('/dashboard', function (req, res) {
                     maintainability: '-',
                     date: new Date(entry.time).toLocaleString(),
                     status: entry.status,
+                    info: entry.stack,
                     isError: entry.status === 'error'
                 }
             })
@@ -150,6 +151,13 @@ app.get('/add-project', function (req, res) {
         providers: Object.keys(conf.providers)
     };
     res.render('add-project', model);
+});
+
+app.get('/projects', function (req, res) {
+    var model = {
+        projects: Projects.getProjects()
+    };
+    res.render('projects', model);
 });
 
 app.use('/bower_components', express.static('bower_components'));
