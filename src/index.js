@@ -3,6 +3,7 @@
 var defaults = {
     tmp: 'tmp',
     resultDir: 'results',
+	host: 'localhost',
     port: 3000,
     providers: {
         'github.com': {
@@ -202,7 +203,7 @@ app.get('/task/:provider/:user/:repo', function (req, res) {
     });
 });
 
-var server = app.listen(conf.port, function () {
+var server = app.listen(conf.port, conf.host, function () {
     var host = server.address().address;
     var port = server.address().port;
     console.log('Plato Service started at http://%s:%s', host, port);
