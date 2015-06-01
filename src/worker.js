@@ -39,9 +39,10 @@ function run(newTask) {
     function handleExtractZip(zipPath) {
         tmpDir = zipPath;
         runPlato(
-            utils.paramsToPath(params),
             zipPath,
+            utils.paramsToPath(params),
             params.dir,
+            params.user + '/' + params.repo,
             handlePlato
         );
     }
@@ -114,13 +115,13 @@ function extractZip(buffer, cb) {
     }
 }
 
-function runPlato(name, source, dir, cb) {
-    console.log('Running PlatoJS for %s at %s', name, source);
+function runPlato(sourceDir, outputDir, dir, name, cb) {
+    console.log('Running PlatoJS for %s at %s', outputDir, sourceDir);
 
     var cwd = process.cwd();
-    process.chdir(source);
+    process.chdir(sourceDir);
 
-    var outputDir = path.relative(process.cwd(), cwd) + '/' + conf.resultDir + '/' + name;
+    var relativeOutputDir = path.relative(process.cwd(), cwd) + '/' + conf.resultDir + '/' + outputDir;
 
     var files = [
         dir ? dir + '/*' : '/*'
@@ -131,7 +132,7 @@ function runPlato(name, source, dir, cb) {
         recurse: true
     };
 
-    plato.inspect(files, outputDir, options, function(){
+    plato.inspect(files, relativeOutputDir, options, function(){
         process.chdir(cwd);
         cb();
     });
