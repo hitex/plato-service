@@ -10,6 +10,8 @@ var conf;
 var async = require('async');
 var rimraf = require('rimraf');
 
+var utils = require('./utils');
+
 var task;
 
 process.on('message', function (msg) {
@@ -37,7 +39,7 @@ function run(newTask) {
     function handleExtractZip(zipPath) {
         tmpDir = zipPath;
         runPlato(
-            [params.provider, params.user, params.repo, params.branch.replace('/', '_')].join('/'),
+            utils.paramsToPath(params),
             zipPath,
             params.dir,
             handlePlato

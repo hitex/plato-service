@@ -21,6 +21,8 @@ var app = express();
 var conf = require('rc')('platoservice', defaults);
 var childProcess = require('child_process');
 
+var utils = require('./utils');
+
 var DataStore = require('nedb');
 var db = {
     tasks: new DataStore({ filename: 'tasks.db', autoload: true }),
@@ -133,7 +135,7 @@ app.get('/dashboard', function (req, res) {
                 return {
                     project: entry.params.user + '/' + entry.params.repo,
                     projectUrl: 'https://' + entry.params.provider + '/' + entry.params.user + '/' + entry.params.repo,
-                    result: '/results/' + entry.params.provider + '/' + entry.params.user + '/' + entry.params.repo + '/' + entry.params.branch + '/',
+                    result: '/results/' + utils.paramsToPath(entry.params),
                     branch: entry.params.branch,
                     dir: entry.params.dir,
                     maintainability: '-',
@@ -171,13 +173,7 @@ app.get('/task/:provider/:user/:repo', function (req, res) {
     var task = {
         _id: Date.now() * 10000 + Math.round(Math.random()*10000),
         time: Date.now(),
-        params: {
-            provider: req.params.provider,
-            user: req.params.user,
-            repo: req.params.repo,
-            branch: req.query.branch || 'master',
-            dir: req.query.dir
-        },
+        params: utils.reqToParams(req),
         status: 'new'
     };
 
@@ -199,7 +195,7 @@ app.get('/task/:provider/:user/:repo', function (req, res) {
     res.send({
         date: Date.now(),
         queue: queue.length,
-        result: '/results/' + task.params.provider + '/' + task.params.user + '/' + task.params.repo + '/' + task.params.branch
+        result: '/results/' + utils.paramsToPath(task.params)
     });
 });
 
