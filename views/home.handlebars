@@ -91,7 +91,13 @@
                         <tbody>
                         {{#each log}}
                         <tr class="{{#if this.isError}}danger{{/if}}">
-                            <td><a href="{{this.result}}">{{this.project}}</a><a class="pull-right" href="{{this.projectUrl}}"><span class="fa fa-database"></span></a></td>
+                            <td>
+                                <a href="{{this.result}}">{{this.project}}</a>
+                                <div class="pull-right">
+                                    <a href="" onclick="repeatTask('{{this.task}}')" title="Repeat this task"><span class="fa fa-repeat"></span></a href="">
+                                    <a href="{{this.projectUrl}}" title="Open project repo" target="_blank"><span class="fa fa-database"></span></a>
+                                </div>
+                            </td>
                             <td>{{this.branch}}</td>
                             <td>{{this.dir}}</td>
                             <td class="center">{{this.maintainability}}</td>

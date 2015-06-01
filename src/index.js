@@ -136,6 +136,7 @@ app.get('/dashboard', function (req, res) {
                     project: entry.params.user + '/' + entry.params.repo,
                     projectUrl: 'https://' + entry.params.provider + '/' + entry.params.user + '/' + entry.params.repo,
                     result: '/results/' + utils.paramsToPath(entry.params),
+                    task: '/task/' + utils.paramsToTask(entry.params),
                     branch: entry.params.branch,
                     dir: entry.params.dir,
                     maintainability: '-',
@@ -168,6 +169,7 @@ app.use('/bower_components', express.static('bower_components'));
 app.use('/dist', express.static('bower_components/startbootstrap-sb-admin-2/dist'));
 
 app.use('/results', express.static('results'));
+app.use('/web.js', express.static('src/web.js'));
 
 app.get('/task/:provider/:user/:repo', function (req, res) {
     var task = {

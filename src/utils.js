@@ -12,6 +12,19 @@ function reqToParams(req) {
     };
 }
 
+function paramsToTask(params) {
+    var url = [params.provider,
+        params.user,
+        params.repo].join('/');
+    var query = [];
+    if (params.dir) query.push('dir=' + params.dir);
+    if (params.branch) query.push('branch=' + params.branch);
+
+    if (query.length) query = '?' + query.join('&');
+
+    return url + query;
+}
+
 function paramsToPath(params) {
     return [
         params.provider,
@@ -26,5 +39,6 @@ function paramsToPath(params) {
 
 module.exports = {
     reqToParams: reqToParams,
+    paramsToTask: paramsToTask,
     paramsToPath: paramsToPath
 };
