@@ -15,7 +15,7 @@ function submitTask(form){
     if (form.dir.value) params += 'dir=' + form.dir.value;
 
     request(
-        '/task/' + form.provider.value + '/' + form.repo.value + (params.length > 1 ? params : ''),
+        '/api/task/' + form.provider.value + '/' + form.repo.value + (params.length > 1 ? params : ''),
         function(){
             window.location.href = '/';
         }
