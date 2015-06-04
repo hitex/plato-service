@@ -103,7 +103,7 @@ function startWorker () {
             runPendingTask();
 
         } else if (msg.__type === 'done') {
-            db.tasks.update({ _id: msg.task._id }, { $set: { status: 'done' } });
+            db.tasks.update({ _id: msg.task._id }, { $set: { status: 'done', result: msg.result } });
             inProgress = false;
 
             Projects.add(msg.task.params);
@@ -139,7 +139,7 @@ app.get('/dashboard', function (req, res) {
                     task: '/api/task/' + utils.paramsToTask(entry.params),
                     branch: entry.params.branch,
                     dir: entry.params.dir,
-                    maintainability: '-',
+                    maintainability: entry.result ? entry.result.maintainability : '-',
                     date: new Date(entry.time).toLocaleString(),
                     status: entry.status,
                     info: entry.stack,
