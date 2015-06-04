@@ -47,11 +47,12 @@ function run(newTask) {
         );
     }
 
-    function handlePlato() {
+    function handlePlato(report) {
         console.log('Done processing %s', name);
         process.send({
             __type: 'done',
-            task: task
+            task: task,
+            result: report.summary.average
         });
 
         console.log('Cleaning up', tmpDir);
@@ -134,7 +135,9 @@ function runPlato(sourceDir, outputDir, dir, name, cb) {
 
     plato.inspect(files, relativeOutputDir, options, function(){
         process.chdir(cwd);
-        cb();
+        var report = fs.readFileSync(conf.resultDir + '/' + outputDir + '/report.json');
+        report = JSON.parse(report);
+        cb(report);
     });
 }
 
