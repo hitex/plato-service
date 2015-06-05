@@ -3,7 +3,7 @@
 var defaults = {
     tmp: 'tmp',
     resultDir: 'results',
-	host: 'localhost',
+    host: 'localhost',
     port: 3000,
     providers: {
         'github.com': {
