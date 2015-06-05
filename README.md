@@ -14,16 +14,16 @@ Add `.platoservicerc` file in the root of the project or in any places defined [
 
 ``` json
 {
-    tmp: 'tmp',
-    resultDir: 'results',
-    host: 'localhost',
-    port: 3000,
-    providers: {
-        'github.com': {
-            zipUrl: 'https://github.com/{user}/{repo}/archive/{branch}.zip'
+    "tmp": "tmp",
+    "resultDir": "results",
+    "host": "localhost",
+    "port": 3000,
+    "providers": {
+        "github.com": {
+            "zipUrl": "https://github.com/{user}/{repo}/archive/{branch}.zip"
         },
-        'bitbucket.com': {
-            zipUrl: 'https://bitbucket.org/{user}/{repo}/get/{branch}.zip'
+        "bitbucket.com": {
+            "zipUrl": "https://bitbucket.org/{user}/{repo}/get/{branch}.zip"
         }
     }
 }
